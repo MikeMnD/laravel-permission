@@ -19,6 +19,8 @@ class PermissionRegistrar
 
     /** @var string */
     protected $cacheKey = 'spatie.permission.cache';
+    
+    private $permissions;
 
     public function __construct(Gate $gate, Repository $cache)
     {
@@ -47,8 +49,11 @@ class PermissionRegistrar
 
     public function getPermissions(): Collection
     {
-        return $this->cache->remember($this->cacheKey, config('permission.cache_expiration_time'), function () {
-            return app(Permission::class)->with('roles')->get();
-        });
+        if (!$this->permissions) {
+            $this->permissions = $this->cache->remember($this->cacheKey, config('permission.cache_expiration_time'), function () {
+                return app(Permission::class)->with('roles')->get();
+            });
+        }
+        return $this->permissions ;
     }
 }
