@@ -2,7 +2,6 @@
 
 namespace Spatie\Permission\Test;
 
-use Monolog\Handler\TestHandler;
 use Spatie\Permission\Contracts\Role;
 use Illuminate\Database\Schema\Blueprint;
 use Spatie\Permission\PermissionRegistrar;
@@ -36,17 +35,13 @@ abstract class TestCase extends Orchestra
 
         $this->setUpDatabase($this->app);
 
-        $this->reloadPermissions();
-
         $this->testUser = User::first();
         $this->testUserRole = app(Role::class)->find(1);
         $this->testUserPermission = app(Permission::class)->find(1);
 
         $this->testAdmin = Admin::first();
         $this->testAdminRole = app(Role::class)->find(3);
-        $this->testAdminPermission = app(Permission::class)->find(3);
-
-        $this->clearLogTestHandler();
+        $this->testAdminPermission = app(Permission::class)->find(4);
     }
 
     /**
@@ -83,8 +78,6 @@ abstract class TestCase extends Orchestra
 
         // Use test User model for users provider
         $app['config']->set('auth.providers.users.model', User::class);
-
-        $app['log']->getMonolog()->pushHandler(new TestHandler());
     }
 
     /**
@@ -97,6 +90,7 @@ abstract class TestCase extends Orchestra
         $app['db']->connection()->getSchemaBuilder()->create('users', function (Blueprint $table) {
             $table->increments('id');
             $table->string('email');
+            $table->softDeletes();
         });
 
         $app['db']->connection()->getSchemaBuilder()->create('admins', function (Blueprint $table) {
@@ -115,23 +109,20 @@ abstract class TestCase extends Orchestra
         $app[Role::class]->create(['name' => 'testAdminRole', 'guard_name' => 'admin']);
         $app[Permission::class]->create(['name' => 'edit-articles']);
         $app[Permission::class]->create(['name' => 'edit-news']);
+        $app[Permission::class]->create(['name' => 'edit-blog']);
         $app[Permission::class]->create(['name' => 'admin-permission', 'guard_name' => 'admin']);
     }
 
     /**
      * Reload the permissions.
-     *
-     * @return bool
      */
     protected function reloadPermissions()
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
-
-        return app(PermissionRegistrar::class)->registerPermissions();
     }
 
     /**
-     * Refresh the testuser.
+     * Refresh the testUser.
      */
     public function refreshTestUser()
     {
@@ -146,36 +137,11 @@ abstract class TestCase extends Orchestra
         $this->testAdmin = $this->testAdmin->fresh();
     }
 
-    protected function clearLogTestHandler()
-    {
-        collect($this->app['log']->getMonolog()->getHandlers())->filter(function ($handler) {
-            return $handler instanceof TestHandler;
-        })->first(function (TestHandler $handler) {
-            $handler->clear();
-        });
-    }
-
-    protected function assertNotLogged($message, $level)
-    {
-        $this->assertFalse($this->hasLog($message, $level), "Found `{$message}` in the logs.");
-    }
-
-    protected function assertLogged($message, $level)
-    {
-        $this->assertTrue($this->hasLog($message, $level), "Couldn't find `{$message}` in the logs.");
-    }
-
     /**
-     * @param $message
-     * @param $level
-     *
-     * @return bool
+     * Refresh the testUserPermission.
      */
-    protected function hasLog($message, $level)
+    public function refreshTestUserPermission()
     {
-        return collect($this->app['log']->getMonolog()->getHandlers())->filter(function ($handler) use ($message, $level) {
-            return $handler instanceof TestHandler
-                && $handler->hasRecordThatContains($message, $level);
-        })->count() > 0;
+        $this->testUserPermission = $this->testUserPermission->fresh();
     }
 }
