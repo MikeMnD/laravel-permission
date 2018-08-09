@@ -21,6 +21,7 @@ class PermissionRegistrar
     protected $cacheKey = 'spatie.permission.cache';
     
     private $permissions;
+    private $permissions_plucked = [];
 
     public function __construct(Gate $gate, Repository $cache)
     {
@@ -54,6 +55,22 @@ class PermissionRegistrar
                 return app(Permission::class)->with('roles')->get();
             });
         }
+
+        if (!$this->permissions_plucked) {
+            $this->permissions_plucked = $this->cache->remember($this->cacheKey, config('permission.cache_expiration_time'), function () {
+                return app(Permission::class)->pluck('id', 'name')->toArray();
+            });
+        }
+
         return $this->permissions ;
     }
+
+    public function getPermissionID($name){
+        $id = null;
+        if (count($this->permissions_plucked) > 0 && array_key_exists($name, $this->permissions_plucked)) {
+            $id = $this->permissions_plucked[$name];
+        }
+        return $id;
+    }
+
 }

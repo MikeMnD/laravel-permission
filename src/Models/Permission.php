@@ -99,6 +99,10 @@ class Permission extends Model implements PermissionContract
         return $permission;
     }
 
+    public static function getID($name){
+        return app(PermissionRegistrar::class)->getPermissionID($name);
+    }
+
     /**
      * Find a permission by its id (and optionally guardName).
      *
