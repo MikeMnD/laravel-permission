@@ -104,7 +104,7 @@ trait HasPermissions
      * @return bool
      */
     public function hasPermissionTo($permission, $guardName = null): bool
-    {
+    {        start_measure('hasPermissionTo...zxc');
         if (is_string($permission)) {
             $permission = app(Permission::class)->findByName(
                 $permission,
@@ -118,7 +118,7 @@ trait HasPermissions
                 $guardName ?? $this->getDefaultGuardName()
             );
         }
-
+       stop_measure('hasPermissionTo...zxc');
         return $this->hasDirectPermission($permission) || $this->hasPermissionViaRole($permission);
     }
 
@@ -175,7 +175,10 @@ trait HasPermissions
      */
     protected function hasPermissionViaRole(Permission $permission): bool
     {
-        return $this->hasRole($permission->roles);
+        start_measure('hasPermissionViaRole');
+       $rez = $this->hasRole($permission->roles);
+        stop_measure('hasPermissionViaRole');
+        return $rez;
     }
 
     /**
