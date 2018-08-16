@@ -28,6 +28,10 @@ class PermissionRegistrar
     {
         $this->gate = $gate;
         $this->cache = $cache;
+        $this->getPermissions();
+
+        $this->setPermissionsGroupBy();
+
     }
 
     public function registerPermissions(): bool
@@ -49,10 +53,12 @@ class PermissionRegistrar
 
     public function forgetCachedPermissions()
     {
-        $grouped = $this->permissions->groupBy('permissionable_type');
-        foreach($grouped as $key => $group) {
-            $cache_key = "permissions_".mb_strtolower(str_replace("\\", "_", $key));
-            $this->cache->forget($cache_key);
+        if($this->permissions) {
+            $grouped = $this->permissions->groupBy('permissionable_type');
+            foreach($grouped as $key => $group) {
+                $cache_key = "permissions_".mb_strtolower(str_replace("\\", "_", $key));
+                $this->cache->forget($cache_key);
+            }
         }
         $this->cache->forget($this->cacheKey . "_plucked");
         $this->cache->forget($this->cacheKey);
@@ -92,28 +98,42 @@ class PermissionRegistrar
         return $id;
     }
 
-    public function getPermissionsByNamespace($namespace){
-
-        $namespace_cache_key = "permissions_".mb_strtolower(str_replace("\\", "_", $namespace));
-
-        if($this->cache->has($namespace_cache_key)){
-            return $this->cache->get($namespace_cache_key);
-        }
-
+    public function setPermissionsGroupBy()
+    {
         $grouped = $this->permissions->groupBy('permissionable_type');
+
         foreach($grouped as $key => $group){
             $cache_key = "permissions_".mb_strtolower(str_replace("\\", "_", $key));
             $this->cache->remember($cache_key, config('permission.cache_expiration_time'), function () use ($group) {
                 return $group->pluck('id', 'name')->toArray();
             });
         }
+    }
 
+    public function getPermissionsByNamespace($namespace){
+
+        $namespace_cache_key = "permissions_".mb_strtolower(str_replace("\\", "_", $namespace));
+        dump($namespace_cache_key);
+        if($this->cache->has($namespace_cache_key)){
+            dump("asdasd");
+            dd($this->cache->get($namespace_cache_key));
+            return $this->cache->get($namespace_cache_key);
+        }
+        $this->setPermissionsGroupBy($namespace);
+        dump("after setPermissionsGroupBy");
+        dd($this->cache->get($namespace_cache_key));
         return $this->cache->get($namespace_cache_key);
     }
 
     public function getPermissionsByUserID($id)
     {
-
+        if(array_key_exists($id, $this->users_permissions)){
+            $all_user_permissions = $this->users_permissions[$id];
+        } else {
+            $all_user_permissions = app('auth')->user()->getAllPermissionsIDs();
+            $this->users_permissions[$id] = $all_user_permissions;
+        }
+        return $all_user_permissions;
     }
 
 }

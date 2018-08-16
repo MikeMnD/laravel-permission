@@ -15,22 +15,19 @@ class PermissionMiddleware
 
     public function handle($request, Closure $next, $permission)
     {
+        return $next($request);
+
+
         if (app('auth')->guest()) {
             throw UnauthorizedException::notLoggedIn();
         }
 
         $user_id = auth()->id();
-
-
         start_measure('PermissionRegistrar ------------------- UserPerms');
-        $PR = app(PermissionRegistrar::class);
-        if(array_key_exists($user_id, $PR->users_permissions)){
-            $all_user_permissions = $PR->users_permissions[$user_id];
-        } else {
-            $all_user_permissions = app('auth')->user()->getAllPermissionsIDs();
-            $PR->users_permissions[$user_id] = $all_user_permissions;
-        }
-         stop_measure('PermissionRegistrar ------------------- UserPerms');
+        $all_user_permissions = app(PermissionRegistrar::class)->getPermissionsByUserID($user_id);
+        stop_measure('PermissionRegistrar ------------------- UserPerms');
+
+        dd($all_user_permissions);
 
         $permissions = is_array($permission)
             ? $permission
@@ -54,8 +51,6 @@ class PermissionMiddleware
             if (app('auth')->user()->can($permission)) {
                 return $next($request);
             }
-
-
 
         }
 
