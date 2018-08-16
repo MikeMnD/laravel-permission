@@ -105,17 +105,27 @@ class PermissionRegistrar
             $this->cache->remember($cache_key, config('permission.cache_expiration_time'), function () use ($group) {
                 return $group->pluck('id', 'name')->toArray();
             });
+
+            foreach (['create', 'read', 'edit', 'delete'] as $action){
+                $this->cache->remember($cache_key.$action, config('permission.cache_expiration_time'), function () use ($group, $action) {
+                    $filtered = $group->filter(function ($value, $key) use ($action) {
+                        return $value->action == $action;
+                    });
+                    return $filtered->pluck('id', 'name')->toArray();
+                });
+            }
+
         }
     }
 
-    public function getPermissionsByNamespace($namespace){
+    public function getPermissionsByNamespace($namespace, $action = ""){
 
-        $namespace_cache_key = "permissions_".mb_strtolower(str_replace("\\", "_", $namespace));
+        $namespace_cache_key = "permissions_".mb_strtolower(str_replace("\\", "_", $namespace)) . $action;
         if($this->cache->has($namespace_cache_key)){
-
             return $this->cache->get($namespace_cache_key);
         }
         $this->setPermissionsGroupBy($namespace);
+
         return $this->cache->get($namespace_cache_key);
     }
 
