@@ -2,6 +2,7 @@
 
 namespace Spatie\Permission;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Cache\Repository;
@@ -27,8 +28,18 @@ class PermissionRegistrar
     {
         $this->gate = $gate;
         $this->cache = $cache;
-        $this->getPermissions();
-        $this->setPermissionsGroupBy();
+
+        $hasDBConnection = true;
+        try {
+            DB::connection()->getPdo();
+        } catch (\Exception $e) {
+            $hasDBConnection = false;
+        }
+
+        if($hasDBConnection){
+            $this->getPermissions();
+            $this->setPermissionsGroupBy();
+        }
     }
 
     public function registerPermissions(): bool
