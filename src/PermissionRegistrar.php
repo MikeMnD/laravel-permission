@@ -59,6 +59,7 @@ class PermissionRegistrar
 
     public function forgetCachedPermissions()
     {
+
         if($this->permissions) {
             $grouped = $this->permissions->groupBy('permissionable_type');
             foreach($grouped as $key => $group) {
@@ -68,6 +69,10 @@ class PermissionRegistrar
         }
         $this->cache->forget($this->cacheKey . "_plucked");
         $this->cache->forget($this->cacheKey);
+
+        $this->permissions = null;
+        $this->permissions_plucked = [];
+        $this->users_permissions = [];
     }
 
     public function getPermissions(): Collection
