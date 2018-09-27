@@ -101,12 +101,13 @@ class PermissionRegistrar
 
         return $this->permissions;
     }
-
+    
     public function getPermissionID($name){
         $id = null;
-        if (count($this->permissions_plucked) > 0 && array_key_exists($name, $this->permissions_plucked)) {
-            $id = $this->permissions_plucked[$name];
+        if ($this->permissions_plucked || count($this->permissions_plucked) == 0) {
+            $this->getPermissions();
         }
+        $id = $this->permissions_plucked[$name];
         return $id;
     }
 
