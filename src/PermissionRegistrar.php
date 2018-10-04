@@ -107,7 +107,9 @@ class PermissionRegistrar
         if ($this->permissions_plucked || count($this->permissions_plucked) == 0) {
             $this->getPermissions();
         }
-        $id = $this->permissions_plucked[$name];
+        if(key_exists($name, $this->permissions_plucked)){
+            $id = $this->permissions_plucked[$name];
+        }
         return $id;
     }
 
